@@ -213,8 +213,13 @@ char **initial_tokenization_with_env(char *input, char **env, int exit_status)
         strncpy(tokens[token_count], input + start, len);
         tokens[token_count][len] = '\0';
         
-        // Expand variables if needed
-        tokens[token_count] = expand_string(tokens[token_count], env, exit_status);
+        // Expand variables if needed (but not in single quotes)
+        if (should_expand_token(tokens[token_count]))
+        {
+            char *original = tokens[token_count];
+            tokens[token_count] = expand_string(tokens[token_count], env, exit_status);
+            free(original);
+        }
         
         token_count++;
     }
@@ -404,4 +409,15 @@ int invalid_redirections(char **tokens)
         i++;
     }
     return (1);
+}
+
+int should_expand_token(char *token)
+{
+    if (!token || !*token)
+        return 0;
+    int len = ft_strlen(token);
+    if (len >= 2 && token[0] == '\'' && token[len - 1] == '\'')
+        return 0;
+    
+    return 1;
 }

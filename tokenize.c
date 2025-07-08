@@ -258,11 +258,71 @@ char **initial_tokenization(char *input) {
     return NULL;
 }
 
-// No-op: quotes are already removed during tokenization
+char *remove_quotes_from_string(char *str)
+{
+    int i, j;
+    char *result;
+    char current_quote;
+    int len;
+    
+    if (!str)
+        return NULL;
+    
+    len = ft_strlen(str);
+    result = malloc(len + 1);
+    if (!result)
+        return NULL;
+    
+    i = 0;
+    j = 0;
+    current_quote = 0;
+    
+    while (str[i])
+    {
+        if (!current_quote && (str[i] == '\'' || str[i] == '"'))
+        {
+            current_quote = str[i];
+            i++;
+        }
+        else if (current_quote && str[i] == current_quote)
+        {
+            current_quote = 0;
+            i++;
+        }
+        else
+        {
+            result[j++] = str[i++];
+        }
+    }
+    result[j] = '\0';
+    return result;
+}
+
 void strip_quotes_from_tokens(char **tokens, int skip_heredoc_delimiter)
 {
-    (void)tokens;
-    (void)skip_heredoc_delimiter;
+    int i;
+    char *new_token;
+    
+    if (!tokens)
+        return;
+    
+    i = 0;
+    while (tokens[i])
+    {
+        if (skip_heredoc_delimiter && i == 1)
+        {
+            i++;
+            continue;
+        }
+        
+        new_token = remove_quotes_from_string(tokens[i]);
+        if (new_token)
+        {
+            free(tokens[i]);
+            tokens[i] = new_token;
+        }
+        i++;
+    }
 }
 
 char	*merge_tokens(char **tokens, int start, int end)

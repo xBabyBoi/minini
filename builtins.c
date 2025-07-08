@@ -110,7 +110,7 @@ int ft_echo(char **argv, char ***env, int status)
         n_flag = 1;
         i++;
     }
-    // strip_quotes_from_tokens(argv + i, 0);
+    strip_quotes_from_tokens(argv + i, 0);
     while (argv[i])
     {
         ft_putstr_fd(argv[i], STDOUT_FILENO);

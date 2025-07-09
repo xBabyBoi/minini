@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   parse_tokens.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 14:52:23 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/07 15:16:26 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/05 17:06:02 by rhafidi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -36,12 +36,6 @@ t_tree	*process_redirections(t_tree *cmd_node, char **tokens, int start,
 	i = start;
 	while (i <= end)
 	{
-		if (is_complete_quoted_token(tokens[i]))
-        {
-            i++;
-            continue;
-        }
-		
 		redir_type = is_redirections(tokens[i]);
 		if (redir_type)
 		{

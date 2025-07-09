@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 14:42:40 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/07 16:36:33 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/09 15:49:20 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,49 +19,71 @@ int	is_operator(char c)
 
 char *add_delimiter_spaces(char *input)
 {
-    int i = 0;
     int len = strlen(input);
-    char *result = malloc(len * 3 + 1); // Extra space for potential spaces
-    int j = 0;
+    int new_len = len;
+    int i;
     char quote = 0;
     
+    // First pass: count needed spaces (only outside quotes)
+    for (i = 0; i < len; i++) {
+        if (input[i] == '\'' || input[i] == '"') {
+            if (!quote)
+                quote = input[i];
+            else if (quote == input[i])
+                quote = 0;
+            continue;
+        }
+        
+        // Only count spaces if we're NOT inside quotes
+        if (!quote && is_operator_char(input[i])) {
+            // Check for >> or << cases
+            if (i + 1 < len && input[i] == input[i + 1]) {
+                new_len += 2;
+                i++;
+            } else {
+                new_len += 2;
+            }
+        }
+    }
+
+    char *result = malloc(new_len + 1);
     if (!result)
         return NULL;
-    
-    while (input[i])
-    {
-        // Track quote state - if we're inside quotes, don't add spaces
-        if ((input[i] == '\'' || input[i] == '"') && !quote)
-            quote = input[i];
-        else if (input[i] == quote)
-            quote = 0;
+
+    int j = 0;
+    quote = 0;
+    for (i = 0; i < len; i++) {
+        if (input[i] == '\'' || input[i] == '"') {
+            if (!quote)
+                quote = input[i];
+            else if (quote == input[i])
+                quote = 0;
+            result[j++] = input[i];
+            continue;
+        }
         
-        // Only add spaces around operators if NOT inside quotes
-        if (!quote && is_operator_char(input[i]))
-        {
-            // Add space before operator if needed
-            if (j > 0 && result[j-1] != ' ')
-                result[j++] = ' ';
-            
-            // Add the operator
-            result[j++] = input[i];
-            
-            // Handle double operators (>> or <<)
-            if (input[i+1] == input[i])
-            {
-                result[j++] = input[++i];
+        // Only add spaces around operators if we're NOT inside quotes
+        if (!quote && is_operator_char(input[i])) {
+            // Handle >> and << cases
+            if (i + 1 < len && input[i] == input[i + 1]) {
+                if (j > 0 && result[j-1] != ' ')
+                    result[j++] = ' ';
+                result[j++] = input[i];
+                result[j++] = input[i+1];
+                if (i + 2 < len && input[i+2] != ' ')
+                    result[j++] = ' ';
+                i++;
+            } else {
+                // Handle single operator
+                if (j > 0 && result[j-1] != ' ')
+                    result[j++] = ' ';
+                result[j++] = input[i];
+                if (i + 1 < len && input[i+1] != ' ')
+                    result[j++] = ' ';
             }
-            
-            // Add space after operator if needed
-            if (input[i+1] && input[i+1] != ' ')
-                result[j++] = ' ';
-        }
-        else
-        {
-            // Just copy the character as-is
+        } else {
             result[j++] = input[i];
         }
-        i++;
     }
     result[j] = '\0';
     return result;

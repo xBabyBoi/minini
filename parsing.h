@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 13:24:33 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/08 15:52:43 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/09 15:33:04 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -63,9 +63,9 @@ typedef struct s_tree
 	type			type;
 }					t_tree;
 
-int should_expand_token(char *token);
-int is_complete_quoted_token(char *token);
-int is_operator_char2(char c, char *quote);
+
+
+int check_standalone_operators(char **tokens);
 int					is_operator_char(char c);
 char *expand_string(char *str, char **env, int status);
 char				**tokenize_input(char *input, char **env, int status);
@@ -99,6 +99,5 @@ int					invalid_pipe(char **tokens);
 int					ft_strcmp(char *s1, char *s2);
 int					invalid_parenthese(char *input);
 int					special_characters(char *input);
-int is_quoted_token(char *token, char *quote);
 
 #endif

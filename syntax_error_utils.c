@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 18:24:42 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/05/22 15:09:14 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/09 16:10:10 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -16,7 +16,7 @@ int is_pipe(char *token)
 {
     if (!token)
         return (0);
-    return (ft_strcmp(token, "|") == 0);
+    return (ft_strcmp(token, "|") == 0 && token[0] != '"');
 }
 
 

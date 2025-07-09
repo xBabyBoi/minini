@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   syntax_error.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 14:03:07 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/05 16:50:33 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/09 16:11:31 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -44,11 +44,23 @@ int invalid_pipe(char **tokens)
     int i;
 
     i = 0;
+    if (is_pipe(tokens[0]))
+    {
+        ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
+        exit_status = 2;
+        return (0);
+    }
     while (tokens[i])
     {
         if (is_pipe(tokens[i]))
         {
             if (!tokens[i + 1])
+            {
+                ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
+                exit_status = 2;
+                return (0);
+            }
+            if (is_pipe(tokens[i + 1]))
             {
                 ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
                 exit_status = 2;

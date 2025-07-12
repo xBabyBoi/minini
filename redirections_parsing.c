@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   redirections_parsing.c                             :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 16:21:08 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/06 21:41:26 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/12 15:35:05 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -26,7 +26,7 @@ int	is_redirections(char *tokens)
 		return (0);
 }
 
-t_tree	*create_redirections(char *operator, char * file_name)
+t_tree	*create_redirections(char *operator, char *file_name)
 {
 	t_tree	*redir;
 
@@ -50,16 +50,14 @@ t_tree	*create_redirections(char *operator, char * file_name)
 	{
 		redir->type = HEREDOC;
 		redir->file_name = ft_strdup(file_name);
-		
 	}
 	return (redir);
 }
 
-
 int	check_redirection(char *token)
 {
-    if (!token)
-        return (0);
-	return (ft_strcmp(token, ">") == 0 || ft_strcmp(token, "<") == 0 || ft_strcmp(token,
-			">>") == 0 || ft_strcmp(token, "<<") == 0);
+	if (!token)
+		return (0);
+	return (ft_strcmp(token, ">") == 0 || ft_strcmp(token, "<") == 0
+		|| ft_strcmp(token, ">>") == 0 || ft_strcmp(token, "<<") == 0);
 }

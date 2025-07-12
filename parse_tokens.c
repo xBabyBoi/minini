@@ -3,26 +3,14 @@
 /*                                                        :::      ::::::::   */
 /*   parse_tokens.c                                     :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 14:52:23 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/05 17:06:02 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/12 15:33:16 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-t_tree	*create_command_node(char **cmd_args)
-{
-	t_tree	*cmd_node;
-
-	cmd_node = create_command();
-	if (!cmd_node)
-		return (NULL);
-	cmd_node->type = COMMAND;
-	cmd_node->command = cmd_args;
-	return (cmd_node);
-}
 
 t_tree	*process_redirections(t_tree *cmd_node, char **tokens, int start,
 		int end)
@@ -30,7 +18,6 @@ t_tree	*process_redirections(t_tree *cmd_node, char **tokens, int start,
 	int		i;
 	int		redir_type;
 	t_tree	*root;
-	t_tree	*redir_node;
 
 	root = cmd_node;
 	i = start;
@@ -39,15 +26,10 @@ t_tree	*process_redirections(t_tree *cmd_node, char **tokens, int start,
 		redir_type = is_redirections(tokens[i]);
 		if (redir_type)
 		{
-			if (i + 1 <= end)
-			{
-				redir_node = create_redirections(tokens[i], tokens[i + 1]);
-				redir_node->left = root;
-				root = redir_node;
-				i += 2;
-			}
-			else
+			root = handle_redirection(root, tokens, i, end);
+			if (!root)
 				return (NULL);
+			i += 2;
 		}
 		else
 			i++;
@@ -55,62 +37,44 @@ t_tree	*process_redirections(t_tree *cmd_node, char **tokens, int start,
 	return (root);
 }
 
-int	initialize_end_index(char **tokens, int end)
+char	**process_arguments(char **cmd_args, char **tokens, int start, int end)
 {
-	if (end == -1)
+	int	i;
+	int	arg_count;
+
+	arg_count = 0;
+	i = start;
+	while (i <= end)
 	{
-		end = 0;
-		while (tokens[end])
-			end++;
-		end--;
+		if (is_redirections(tokens[i]))
+		{
+			i += 2;
+			if (i > end + 1)
+				return (handle_error_cleanup(cmd_args, arg_count));
+			continue ;
+		}
+		cmd_args[arg_count] = ft_strdup(tokens[i]);
+		if (!cmd_args[arg_count])
+			return (handle_error_cleanup(cmd_args, arg_count));
+		arg_count++;
+		i++;
 	}
-	return (end);
+	cmd_args[arg_count] = NULL;
+	return (cmd_args);
 }
+
 char	**collect_command_arguments(char **tokens, int start, int end)
 {
 	char	**cmd_args;
-	int		i;
-	int		arg_count;
 
 	cmd_args = malloc(sizeof(char *) * (end - start + 2));
 	if (!cmd_args)
 		return (NULL);
-	arg_count = 0;
-	i = start;
-	while (i <= end)
-    {
-        if (is_redirections(tokens[i]))
-        {
-            i += 2;
-            if (i > end + 1)
-            {
-                while (arg_count > 0)
-                    free(cmd_args[--arg_count]);
-                free(cmd_args);
-                return NULL;
-            }
-            continue;
-        }
-        cmd_args[arg_count] = ft_strdup(tokens[i]);
-        if (!cmd_args[arg_count])
-        {
-            // Cleanup if strdup fails
-            while (arg_count > 0)
-                free(cmd_args[--arg_count]);
-            free(cmd_args);
-            return NULL;
-        }
-        arg_count++;
-        i++;
-    }
-    cmd_args[arg_count] = NULL;
-    return cmd_args;
+	return (process_arguments(cmd_args, tokens, start, end));
 }
-
 
 t_tree	*parse_token_subset(char **tokens, int start, int end)
 {
-	int		i;
 	int		arg_count;
 	t_tree	*cmd_node;
 	t_tree	*root;
@@ -126,37 +90,10 @@ t_tree	*parse_token_subset(char **tokens, int start, int end)
 	cmd_node = create_command_node(cmd_args);
 	if (!cmd_node)
 	{
-		free (cmd_args);
+		free(cmd_args);
 		return (NULL);
 	}
 	return (process_redirections(cmd_node, tokens, start, end));
-}
-
-t_tree	*create_pipe_node(void)
-{
-	t_tree	*cmd;
-
-	cmd = create_command();
-	if (!cmd)
-		return (NULL);
-	cmd->type = PIPE;
-	return (cmd);
-}
-
-void	ft_print_tree(t_tree *root)
-{
-	if (root->type == PIPE)
-	{
-		ft_print_tree(root->left);
-		ft_print_tree(root->right);
-	}
-	else if (root->type == GREATER)
-		ft_print_tree(root->left);
-	else
-	{
-		for (int i = 0; root->command[i] != NULL; i++)
-			printf("%s\n", root->command[i]);
-	}
 }
 
 t_tree	*parse_tokens(char **tokens)

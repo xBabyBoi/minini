@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   minishell.h                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/14 15:23:36 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/08 18:37:42 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/12 17:38:41 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -64,6 +64,8 @@ typedef struct s_fd
     int out;
 }   t_fd;
 
+
+void	expand_simple_var(char *str, int *i, char **result, char **env, int status);
 void    execute_command(t_tree *root, int in, int out, char **env);
 void    free_tree(t_tree **root);
 t_tree *handle_redirections(t_tree *root, int *in, int *out, char **env);

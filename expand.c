@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/22 18:32:41 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/12 17:39:07 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/14 15:17:32 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -34,7 +34,6 @@ char	*get_var_name(char *str)
 
     i = 1;
     len = 0;
-
     if (str[i] == '?')
         return ft_strdup("?");
     if (str[i] == '$')
@@ -56,21 +55,17 @@ char	*get_var_name(char *str)
         return var_name;
     }
     while (str[i + len] && (ft_isalnum(str[i + len]) || str[i + len] == '_'))
-        len++;
-    
+        len++;    
     if (len == 0)
         return NULL;
-    
     var_name = malloc(sizeof(char) * (len + 1));
     if (!var_name)
         return NULL;
-    
     i = 1;
     len = 0;
     while (str[i] && (ft_isalnum(str[i]) || str[i] == '_'))
         var_name[len++] = str[i++];
     var_name[len] = '\0';
-    
     return var_name;
 }
 
@@ -89,12 +84,14 @@ char	*get_var_value(char *var_name, char **env, int status)
         status_str = ft_itoa(status);
         return status_str;
     }
+
     if (!ft_strcmp(var_name, "$"))
     {
         pid = getpid();
         status_str = ft_itoa(pid);
         return status_str;
     }
+
     i = compare_var_env(var_name, env);
     if (i >= 0)
     {
@@ -115,7 +112,6 @@ int	find_var_end(char *str)
 
     if (str[i] == '?' || str[i] == '$')
         return 2;
-
     if (str[i] == '{')
     {
         i++;
@@ -123,19 +119,19 @@ int	find_var_end(char *str)
             i++;
         return (str[i] == '}') ? i + 1 : 1;
     }
-    
     while (str[i] && (ft_isalnum(str[i]) || str[i] == '_'))
         i++;
-    
     return i;
 }
 
-char *expand_string(char *str, char **env, int status)
+char *expand_string(char *str, char **env, int status, int heredoc)
 {
     char    *result;
     char    *tmp;
     int     i;
     int     real_status;
+    int     in_single_quote;
+    int     in_double_quote;
 
     if (!str)
         return (NULL);
@@ -145,9 +141,42 @@ char *expand_string(char *str, char **env, int status)
         return (NULL);
 
     i = 0;
+    in_single_quote = 0;
+    in_double_quote = 0;
+    
     while (str[i])
     {
-        if (str[i] == '$')
+        if (str[i] == '\'' && !in_double_quote)
+        {
+            in_single_quote = !in_single_quote;
+            if (heredoc == 1)
+            {
+                i++;
+                continue;
+            }
+            char curr[2] = {str[i], '\0'};
+            tmp = ft_strjoin(result, curr);
+            free(result);
+            result = tmp;
+            i++;
+            continue;
+        }
+        if (str[i] == '"' && !in_single_quote)
+        {
+            in_double_quote = !in_double_quote;
+            if (heredoc == 1)
+            {
+                i++;
+                continue;
+            }
+            char curr[2] = {str[i], '\0'};
+            tmp = ft_strjoin(result, curr);
+            free(result);
+            result = tmp;
+            i++;
+            continue;
+        }        
+        if (str[i] == '$' && (heredoc == 1 || !in_single_quote))
         {
             if (str[i + 1] == '?')
             {
@@ -259,7 +288,7 @@ char	**expand(char **argv, char **env, int status)
 	i = 0;
 	while (i < len)
 	{
-		expanded[i] = expand_string(argv[i], env, status);
+		expanded[i] = expand_string(argv[i], env, status, 1);
 		i++;
 	}
 	expanded[i] = NULL;

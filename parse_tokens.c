@@ -6,38 +6,26 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 14:52:23 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/12 15:33:16 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/14 14:32:06 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-t_tree	*process_redirections(t_tree *cmd_node, char **tokens, int start,
-		int end)
+static int	add_argument_to_array(char **tokens, char **cmd_args, int i,
+		int arg_count)
 {
-	int		i;
-	int		redir_type;
-	t_tree	*root;
-
-	root = cmd_node;
-	i = start;
-	while (i <= end)
+	cmd_args[arg_count] = ft_strdup(tokens[i]);
+	if (!cmd_args[arg_count])
 	{
-		redir_type = is_redirections(tokens[i]);
-		if (redir_type)
-		{
-			root = handle_redirection(root, tokens, i, end);
-			if (!root)
-				return (NULL);
-			i += 2;
-		}
-		else
-			i++;
+		free_cmd_args(cmd_args, arg_count);
+		return (-1);
 	}
-	return (root);
+	return (0);
 }
 
-char	**process_arguments(char **cmd_args, char **tokens, int start, int end)
+static char	**process_tokens_loop(char **tokens, int start, int end,
+		char **cmd_args)
 {
 	int	i;
 	int	arg_count;
@@ -48,14 +36,13 @@ char	**process_arguments(char **cmd_args, char **tokens, int start, int end)
 	{
 		if (is_redirections(tokens[i]))
 		{
-			i += 2;
-			if (i > end + 1)
-				return (handle_error_cleanup(cmd_args, arg_count));
+			i = handle_redirection_skip(i, end, cmd_args, arg_count);
+			if (i == -1)
+				return (NULL);
 			continue ;
 		}
-		cmd_args[arg_count] = ft_strdup(tokens[i]);
-		if (!cmd_args[arg_count])
-			return (handle_error_cleanup(cmd_args, arg_count));
+		if (add_argument_to_array(tokens, cmd_args, i, arg_count) == -1)
+			return (NULL);
 		arg_count++;
 		i++;
 	}
@@ -70,12 +57,14 @@ char	**collect_command_arguments(char **tokens, int start, int end)
 	cmd_args = malloc(sizeof(char *) * (end - start + 2));
 	if (!cmd_args)
 		return (NULL);
-	return (process_arguments(cmd_args, tokens, start, end));
+	return (process_tokens_loop(tokens, start, end, cmd_args));
 }
 
 t_tree	*parse_token_subset(char **tokens, int start, int end)
 {
+	int		i;
 	int		arg_count;
+	t_tree	*ast;
 	t_tree	*cmd_node;
 	t_tree	*root;
 	t_tree	*redir_node;
@@ -93,13 +82,17 @@ t_tree	*parse_token_subset(char **tokens, int start, int end)
 		free(cmd_args);
 		return (NULL);
 	}
-	return (process_redirections(cmd_node, tokens, start, end));
+	ast = process_redirections(cmd_node, tokens, start, end);
+	strip_quotes_from_ast(ast);
+	return (ast);
 }
 
 t_tree	*parse_tokens(char **tokens)
 {
 	int		i;
 	int		start;
+	int		heredoc_flag;
+	t_tree	*ast;
 	t_tree	*pipe_node;
 	t_tree	*cmd_node;
 	t_tree	*redirection_node;
@@ -108,6 +101,7 @@ t_tree	*parse_tokens(char **tokens)
 	i = 0;
 	while (tokens[i])
 	{
+		heredoc_flag = 0;
 		if (ft_strcmp(tokens[i], "|") == 0)
 		{
 			pipe_node = create_pipe_node();

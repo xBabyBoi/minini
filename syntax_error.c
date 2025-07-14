@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/21 14:03:07 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/12 15:59:57 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/14 15:08:14 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -32,7 +32,7 @@ int	check_valid_quotes(char *input)
 	}
 	if (quote != 0)
 	{
-		ft_putstr_fd("minishell: syntax error: unexpected EOF while "
+		ft_putstr_fd("minishell: syntax error: unexpected EOF while"
 			" looking for matching quote\n", 2);
 		exit_status = 2;
 		return (0);
@@ -40,8 +40,11 @@ int	check_valid_quotes(char *input)
 	return (1);
 }
 
-static int	check_pipe_errors(char **tokens, int i)
+int	invalid_pipe(char **tokens)
 {
+	int	i;
+
+	i = 0;
 	while (tokens[i])
 	{
 		if (is_pipe(tokens[i]))
@@ -49,38 +52,13 @@ static int	check_pipe_errors(char **tokens, int i)
 			if (!tokens[i + 1])
 			{
 				ft_putstr_fd("minishell: syntax error near "
-					" unexpected token `|'\n", 2);
-				exit_status = 2;
-				return (0);
-			}
-			if (is_pipe(tokens[i + 1]))
-			{
-				ft_putstr_fd("minishell: syntax error near "
-					" unexpected token `|'\n", 2);
+					"unexpected token `|'\n", 2);
 				exit_status = 2;
 				return (0);
 			}
 		}
 		i++;
 	}
-	return (1);
-}
-
-int	invalid_pipe(char **tokens)
-{
-	if (is_pipe(tokens[0]))
-	{
-		ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
-		exit_status = 2;
-		return (0);
-	}
-	return (check_pipe_errors(tokens, 0));
-}
-
-static int	handle_semicolon_error(void)
-{
-	ft_putstr_fd("minishell: syntax error near unexpected token `;'\n", 2);
-	exit_status = 2;
 	return (1);
 }
 
@@ -103,8 +81,33 @@ int	special_characters(char *input)
 			continue ;
 		}
 		if (!quote && input[i] == ';')
-			return (handle_semicolon_error());
+		{
+			ft_putstr_fd("minishell: syntax error near "
+				"unexpected token `;'\n", 2);
+			exit_status = 2;
+			return (1);
+		}
 		i++;
+	}
+	return (0);
+}
+
+int	check_final_pipe(char **tokens, int token_count)
+{
+	if (token_count > 0 && is_pipe(tokens[token_count - 1]))
+	{
+		ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
+		return (1);
+	}
+	return (0);
+}
+
+int	check_initial_pipe(char **tokens)
+{
+	if (is_pipe(tokens[0]))
+	{
+		ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
+		return (1);
 	}
 	return (0);
 }

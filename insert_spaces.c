@@ -6,13 +6,40 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/05/08 14:42:40 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/12 16:10:29 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/14 13:13:28 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-int	calculate_new_len(char *input, int len)
+int	is_operator(char c)
+{
+	return (c == '|' || c == '<' || c == '>');
+}
+
+static void	handle_quote_char(char c, char *quote)
+{
+	if (c == '\'' || c == '"')
+	{
+		if (!*quote)
+			*quote = c;
+		else if (*quote == c)
+			*quote = 0;
+	}
+}
+
+static void	process_length_for_operator(char *input, int *new_len, int *i, int len)
+{
+	if (*i + 1 < len && input[*i] == input[*i + 1])
+	{
+		*new_len += 2;
+		(*i)++;
+	}
+	else
+		*new_len += 2;
+}
+
+static int	calculate_new_length(char *input, int len)
 {
 	int		new_len;
 	int		i;
@@ -23,85 +50,86 @@ int	calculate_new_len(char *input, int len)
 	quote = 0;
 	while (i < len)
 	{
-		update_quote_state(input[i], &quote);
-		if (!quote && is_operator_char(input[i]))
+		handle_quote_char(input[i], &quote);
+		if (input[i] == '\'' || input[i] == '"')
 		{
-			if (i + 1 < len && input[i] == input[i + 1])
-			{
-				new_len += 2;
-				i++;
-			}
-			else
-			{
-				new_len += 2;
-			}
+			i++;
+			continue ;
 		}
+		if (!quote && is_operator_char(input[i]))
+			process_length_for_operator(input, &new_len, &i, len);
 		i++;
 	}
 	return (new_len);
 }
 
-int	process_character(t_parser *p)
+static void	copy_double_operator(char *input, char *result, int *i, int *j, int len)
 {
-	if (p->input[p->i] == '\'' || p->input[p->i] == '"')
-	{
-		update_quote_state(p->input[p->i], &p->quote);
-		p->result[p->j++] = p->input[p->i];
-		return (p->j);
-	}
-	if (!p->quote && is_operator_char(p->input[p->i]))
-	{
-		if (p->i + 1 < p->len && p->input[p->i] == p->input[p->i + 1])
-		{
-			p->j = handle_double_operator(p);
-			p->i++;
-			return (p->j);
-		}
-		else
-		{
-			return (handle_single_operator(p));
-		}
-	}
+	if (*j > 0 && result[*j - 1] != ' ')
+		result[(*j)++] = ' ';
+	result[(*j)++] = input[*i];
+	result[(*j)++] = input[*i + 1];
+	if (*i + 2 < len && input[*i + 2] != ' ')
+		result[(*j)++] = ' ';
+	(*i)++;
+}
+
+static void	copy_single_operator(char *input, char *result, int *i, int *j, int len)
+{
+	if (*j > 0 && result[*j - 1] != ' ')
+		result[(*j)++] = ' ';
+	result[(*j)++] = input[*i];
+	if (*i + 1 < len && input[*i + 1] != ' ')
+		result[(*j)++] = ' ';
+}
+
+static void	process_operator(char *input, char *result, int *i, int *j, int len)
+{
+	if (*i + 1 < len && input[*i] == input[*i + 1])
+		copy_double_operator(input, result, i, j, len);
 	else
-	{
-		p->result[p->j++] = p->input[p->i];
-		return (p->j);
-	}
+		copy_single_operator(input, result, i, j, len);
 }
 
-void	init_parser(t_parser *p, char *input, char *result, int len)
+static void	fill_result_string(char *input, char *result, int len)
 {
-	p->input = input;
-	p->result = result;
-	p->i = 0;
-	p->j = 0;
-	p->len = len;
-	p->quote = 0;
-}
+	int		i;
+	int		j;
+	char	quote;
 
-void	process_input(t_parser *p)
-{
-	while (p->i < p->len)
+	i = 0;
+	j = 0;
+	quote = 0;
+	while (i < len)
 	{
-		p->j = process_character(p);
-		p->i++;
+		handle_quote_char(input[i], &quote);
+		if (input[i] == '\'' || input[i] == '"')
+		{
+			result[j++] = input[i];
+			i++;
+			continue ;
+		}
+		if (!quote && is_operator_char(input[i]))
+			process_operator(input, result, &i, &j, len);
+		else
+			result[j++] = input[i];
+		i++;
 	}
+	result[j] = '\0';
 }
 
 char	*add_delimiter_spaces(char *input)
 {
-	int			len;
-	int			new_len;
-	char		*result;
-	t_parser	p;
+	int		len;
+	int		new_len;
+	char	*result;
 
 	len = strlen(input);
-	new_len = calculate_new_len(input, len);
+	new_len = calculate_new_length(input, len);
 	result = malloc(new_len + 1);
 	if (!result)
 		return (NULL);
-	init_parser(&p, input, result, len);
-	process_input(&p);
-	result[p.j] = '\0';
+	fill_result_string(input, result, len);
 	return (result);
 }
+

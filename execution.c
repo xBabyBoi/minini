@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   execution.c                                        :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/14 16:52:00 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/08 18:49:15 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/14 15:25:11 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -78,8 +78,8 @@ void    forker(t_tree *root, t_fd *fd, char ***env, char ***exported)
     }
     if (!pid)
     {
-        signal(SIGINT, child_sigint_handler); // Reset SIGINT for child
-        signal(SIGQUIT, SIG_DFL);             // Reset SIGQUIT for child
+        signal(SIGINT, child_sigint_handler);
+        signal(SIGQUIT, SIG_DFL);
         redirecting(fd->in, fd->out);
         if (fd->in == -1 || fd->out == -1)
             exit(EXIT_FAILURE);
@@ -103,7 +103,6 @@ void    forker(t_tree *root, t_fd *fd, char ***env, char ***exported)
         }
         else if (WIFEXITED(exit_status))
             exit_status = WEXITSTATUS(exit_status);
-        // Restore shell signal handlers
         signal(SIGINT, sigint_handler);
         signal(SIGQUIT, SIG_IGN);
     }
@@ -181,7 +180,6 @@ void    execution(t_tree *root,t_fd *fd, char ***env, char ***exported)
     if (root->type == APPEND || root->type == GREATER || root->type == LESS || root->type == HEREDOC)
     {
         cmd = handle_redirections(root, &fd->in, &fd->out, env[0]);
-        // If redirections failed, clean up and return
         if (exit_status != 0)
         {
             if (fd->in != STDIN_FILENO)
@@ -191,12 +189,10 @@ void    execution(t_tree *root,t_fd *fd, char ***env, char ***exported)
             free(pid);
             return;
         }
-        // Execute the command with the redirections applied
         if (cmd)
             forker(cmd, fd, env, exported);
         else
-            forker(NULL, fd, env, exported); // Handle redirection-only commands
-        // Clean up file descriptors
+            forker(NULL, fd, env, exported);
         if (fd->in != STDIN_FILENO)
             close(fd->in);
         if (fd->out != STDOUT_FILENO)

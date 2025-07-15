@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:20:39 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/14 14:23:39 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 14:58:01 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,4 +56,11 @@ void	free_cmd_args(char **cmd_args, int arg_count)
 	while (arg_count > 0)
 		free(cmd_args[--arg_count]);
 	free(cmd_args);
+}
+
+void	free_exit(t_pid *pid, t_fd *fd)
+{
+	free(pid);
+	free(fd);
+	exit(exit_status);
 }

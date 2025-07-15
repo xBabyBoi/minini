@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/14 15:23:36 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/14 20:45:57 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 15:00:30 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -73,6 +73,10 @@ typedef struct s_fd
     int in;
     int out;
 }   t_fd;
+
+
+void	forker(t_tree *root, t_fd *fd, char ***env, char ***exported);
+void	cleanup_fds_and_pid(t_fd *fd, t_pid *pid);
 
 void    execute_command(t_tree *root, int in, int out, char **env);
 void redirecting(int in, int out);

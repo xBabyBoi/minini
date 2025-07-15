@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   exec_utils.c                                       :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
+/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 15:17:18 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/06 19:48:18 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/15 14:54:55 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -85,61 +85,80 @@ void    access_exec(char **argv, char **env)
     }
 }
 
-void    execute_command(t_tree *root, int in, int out, char **env)
+static int	find_valid_command(t_tree *root)
 {
-    char *path;
-    (void)in;
-    (void)out;
-    
-    int i = 0;
-    // First check if it's an absolute or relative path
-    while(root->command[i][0] == '\0')
-    {
-        i++;
-        if (!root->command[i])
-            exit(EXIT_SUCCESS);
-    }
-    if (ft_strchr(root->command[i], '/') || root->command[i][0] == '.')
-    {
-        if (access(root->command[i], F_OK) == -1)
-        {
-            ft_putstr_fd("minishell: ", STDERR_FILENO);
-            ft_putstr_fd(root->command[i], STDERR_FILENO);
-            ft_putstr_fd(": No such file or directory\n", STDERR_FILENO);
-            exit(127);  // Command not found
-        }
-        if (access(root->command[i], X_OK) == -1)
-        {
-            ft_putstr_fd("minishell: ", STDERR_FILENO);
-            ft_putstr_fd(root->command[i], STDERR_FILENO);
-            ft_putstr_fd(": Permission denied\n", STDERR_FILENO);
-            exit(126);  // Permission denied
-        }
-        path = root->command[i];
-    }
-    else
-    {
-        path = get_path(root->command[i], env);
-        if (!path)
-        {
-            ft_putstr_fd("minishell: ", STDERR_FILENO);
-            ft_putstr_fd(root->command[i], STDERR_FILENO);
-            ft_putstr_fd(": command not found\n", STDERR_FILENO);
-            exit(127);  // Command not found
-        }
-    }
-    
-    if (execve(path, &root->command[i], env) == -1)
-    {
-        if (errno == EACCES)
-        {
-            ft_putstr_fd("minishell: ", STDERR_FILENO);
-            ft_putstr_fd(root->command[i], STDERR_FILENO);
-            ft_putstr_fd(": Permission denied\n", STDERR_FILENO);
-            exit(126);  // Permission denied
-        }
-        if (errno == ENOENT)
-            exit(127);  // No such file or directory
-        exit(EXIT_FAILURE);     // Other execution errors
-    }
+	int	i;
+
+	i = 0;
+	while (root->command[i][0] == '\0')
+	{
+		i++;
+		if (!root->command[i])
+			exit(EXIT_SUCCESS);
+	}
+	return (i);
+}
+
+static void	print_error_message(char *command, char *error_msg)
+{
+	ft_putstr_fd("minishell: ", STDERR_FILENO);
+	ft_putstr_fd(command, STDERR_FILENO);
+	ft_putstr_fd(error_msg, STDERR_FILENO);
+}
+
+static char	*handle_absolute_path(char *command)
+{
+	if (access(command, F_OK) == -1)
+	{
+		print_error_message(command, ": No such file or directory\n");
+		exit(127);
+	}
+	if (access(command, X_OK) == -1)
+	{
+		print_error_message(command, ": Permission denied\n");
+		exit(126);
+	}
+	return (command);
+}
+
+static char	*get_command_path(char *command, char **env)
+{
+	char	*path;
+
+	if (ft_strchr(command, '/') || command[0] == '.')
+		return (handle_absolute_path(command));
+	path = get_path(command, env);
+	if (!path)
+	{
+		print_error_message(command, ": command not found\n");
+		exit(127);
+	}
+	return (path);
+}
+
+static void	execute_with_error_handling(char *path, char **args, char **env, char *command)
+{
+	if (execve(path, args, env) == -1)
+	{
+		if (errno == EACCES)
+		{
+			print_error_message(command, ": Permission denied\n");
+			exit(126);
+		}
+		if (errno == ENOENT)
+			exit(127);
+		exit(EXIT_FAILURE);
+	}
+}
+
+void	execute_command(t_tree *root, int in, int out, char **env)
+{
+	char	*path;
+	int		i;
+
+	(void)in;
+	(void)out;
+	i = find_valid_command(root);
+	path = get_command_path(root->command[i], env);
+	execute_with_error_handling(path, &root->command[i], env, root->command[i]);
 }

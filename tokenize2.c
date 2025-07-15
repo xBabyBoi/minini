@@ -12,7 +12,8 @@
 
 #include "minishell.h"
 
-char	**process_tokens(char *input, char **tokens, char **env, int exit_status)
+char	**process_tokens(char *input, char **tokens, char **env,
+		int exit_status)
 {
 	t_token_ctx	ctx;
 

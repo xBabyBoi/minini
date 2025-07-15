@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/13 15:24:25 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/14 15:34:12 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 15:06:37 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -22,31 +22,6 @@ int	is_complete_quoted_token(char *token)
 	first = token[0];
 	last = token[strlen(token) - 1];
 	return ((first == '\'' || first == '\"') && first == last);
-}
-
-int	find_token_end(char *input, int i, char *quote, int *quote_type)
-{
-	*quote = 0;
-	*quote_type = -1;
-	while (input[i])
-	{
-		if (input[i] == '\'' && !(*quote))
-		{
-			*quote = input[i];
-			*quote_type = 0;
-		}
-		else if (input[i] == '\"' && !(*quote))
-		{
-			*quote = input[i];
-			*quote_type = 1;
-		}
-		else if (input[i] == *quote)
-			*quote = 0;
-		else if (!(*quote) && input[i] == ' ')
-			break ;
-		i++;
-	}
-	return (i);
 }
 
 char	*create_token(char *input, int start, int len, t_token_ctx *ctx)
@@ -98,7 +73,8 @@ char	**tokenize_loop(char *input, t_token_ctx *ctx)
 	return (ctx->tokens);
 }
 
-char	**initial_tokenization_with_env(char *input, char **env, int exit_status)
+char	**initial_tokenization_with_env(char *input, char **env,
+		int exit_status)
 {
 	t_token_ctx	ctx;
 

@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/14 14:18:22 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/14 15:52:47 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 15:10:13 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,19 +14,18 @@
 
 int	check_redirection_syntax(char **tokens, int i)
 {
-    if (!tokens[i + 1])
-    {
-        print_syntax_error(NULL);
-        return (1);
-    }
-    if (is_redirection(tokens[i + 1]) || is_pipe(tokens[i + 1]))
-    {
-        print_syntax_error(tokens[i + 1]);
-        return (1);
-    }
-    return (0);
+	if (!tokens[i + 1])
+	{
+		print_syntax_error(NULL);
+		return (1);
+	}
+	if (is_redirection(tokens[i + 1]) || is_pipe(tokens[i + 1]))
+	{
+		print_syntax_error(tokens[i + 1]);
+		return (1);
+	}
+	return (0);
 }
-
 
 int	check_syntax_errors(char **tokens)
 {
@@ -64,4 +63,24 @@ int	check_tokens_loop(char **tokens)
 		i++;
 	}
 	return (i);
+}
+
+int	check_final_pipe(char **tokens, int token_count)
+{
+	if (token_count > 0 && is_pipe(tokens[token_count - 1]))
+	{
+		ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
+		return (1);
+	}
+	return (0);
+}
+
+int	check_initial_pipe(char **tokens)
+{
+	if (is_pipe(tokens[0]))
+	{
+		ft_putstr_fd("minishell: syntax error near unexpected token `|'\n", 2);
+		return (1);
+	}
+	return (0);
 }

@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 17:21:18 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/15 14:55:47 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 21:31:37 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -101,14 +101,13 @@ int ft_echo(char **argv, char ***env, int status)
         int j = 1;
         while (argv[i][j] == 'n')
             j++;
-        if (argv[i][j] != '\0')  // If not all 'n', break
+        if (argv[i][j] != '\0')
             break;
-        if (j == 1)  // If just "-", break
+        if (j == 1)
             break;
         n_flag = 1;
         i++;
     }
-    // strip_quotes_from_tokens(argv + i, 0);
     while (argv[i])
     {
         ft_putstr_fd(argv[i], STDOUT_FILENO);

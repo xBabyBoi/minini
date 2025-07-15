@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/18 14:52:23 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/14 14:32:06 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 15:16:11 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -60,19 +60,11 @@ char	**collect_command_arguments(char **tokens, int start, int end)
 	return (process_tokens_loop(tokens, start, end, cmd_args));
 }
 
-t_tree	*parse_token_subset(char **tokens, int start, int end)
+static t_tree	*create_command_with_args(char **tokens, int start, int end)
 {
-	int		i;
-	int		arg_count;
-	t_tree	*ast;
-	t_tree	*cmd_node;
-	t_tree	*root;
-	t_tree	*redir_node;
 	char	**cmd_args;
+	t_tree	*cmd_node;
 
-	end = initialize_end_index(tokens, end);
-	if (start > end || !tokens[start])
-		return (NULL);
 	cmd_args = collect_command_arguments(tokens, start, end);
 	if (!cmd_args)
 		return (NULL);
@@ -82,35 +74,21 @@ t_tree	*parse_token_subset(char **tokens, int start, int end)
 		free(cmd_args);
 		return (NULL);
 	}
+	return (cmd_node);
+}
+
+t_tree	*parse_token_subset(char **tokens, int start, int end)
+{
+	t_tree	*ast;
+	t_tree	*cmd_node;
+
+	end = initialize_end_index(tokens, end);
+	if (start > end || !tokens[start])
+		return (NULL);
+	cmd_node = create_command_with_args(tokens, start, end);
+	if (!cmd_node)
+		return (NULL);
 	ast = process_redirections(cmd_node, tokens, start, end);
 	strip_quotes_from_ast(ast);
 	return (ast);
-}
-
-t_tree	*parse_tokens(char **tokens)
-{
-	int		i;
-	int		start;
-	int		heredoc_flag;
-	t_tree	*ast;
-	t_tree	*pipe_node;
-	t_tree	*cmd_node;
-	t_tree	*redirection_node;
-
-	start = 0;
-	i = 0;
-	while (tokens[i])
-	{
-		heredoc_flag = 0;
-		if (ft_strcmp(tokens[i], "|") == 0)
-		{
-			pipe_node = create_pipe_node();
-			pipe_node->left = parse_token_subset(tokens, start, i - 1);
-			start = i + 1;
-			pipe_node->right = parse_tokens(tokens + start);
-			return (pipe_node);
-		}
-		i++;
-	}
-	return (parse_token_subset(tokens, 0, -1));
 }

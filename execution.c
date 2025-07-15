@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/14 16:52:00 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/15 15:01:01 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 21:28:37 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -50,31 +50,12 @@ void	close_wait(int *pfd, t_pid *pid, t_fd *fd)
 	free(pid);
 }
 
-void	handle_pipe(t_pid *pid, t_fd *fd, char ***env, char ***exported,
-		t_tree *root)
+void	handle_left_child(t_pipe_data *data, int *pfd, t_tree *root)
 {
-	int	pfd[2];
-
-	pipein(pfd);
-	pid->left_pid = fork();
-	if (!pid->left_pid)
-	{
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		close(pfd[0]);
-		fd->out = pfd[1];
-		execution(root->left, fd, env, exported);
-		free_exit(pid, fd);
-	}
-	pid->right_pid = fork();
-	if (!pid->right_pid)
-	{
-		signal(SIGINT, SIG_DFL);
-		signal(SIGQUIT, SIG_DFL);
-		close(pfd[1]);
-		fd->in = pfd[0];
-		execution(root->right, fd, env, exported);
-		free_exit(pid, fd);
-	}
-	close_wait(pfd, pid, fd);
+	signal(SIGINT, SIG_DFL);
+	signal(SIGQUIT, SIG_DFL);
+	close(pfd[0]);
+	data->fd->out = pfd[1];
+	execution(root->left, data->fd, data->env, data->exported);
+	free_exit(data->pid, data->fd);
 }

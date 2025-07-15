@@ -6,25 +6,11 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/14 20:40:18 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/15 14:56:44 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 15:25:04 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
-
-static void	handle_empty_command(t_fd *fd)
-{
-	int	saved_stdin;
-	int	saved_stdout;
-
-	saved_stdin = dup(STDIN_FILENO);
-	saved_stdout = dup(STDOUT_FILENO);
-	redirecting(fd->in, fd->out);
-	dup2(saved_stdin, STDIN_FILENO);
-	dup2(saved_stdout, STDOUT_FILENO);
-	close(saved_stdin);
-	close(saved_stdout);
-}
 
 static void	handle_builtin_command(t_tree *root, t_fd *fd, char ***env,
 		char ***exported)

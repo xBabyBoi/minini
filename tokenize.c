@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/14 15:05:52 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/14 15:05:54 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 15:06:41 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,4 +59,29 @@ char	*merge_tokens(char **tokens, int start, int end)
 		i++;
 	}
 	return (merged);
+}
+
+int	find_token_end(char *input, int i, char *quote, int *quote_type)
+{
+	*quote = 0;
+	*quote_type = -1;
+	while (input[i])
+	{
+		if (input[i] == '\'' && !(*quote))
+		{
+			*quote = input[i];
+			*quote_type = 0;
+		}
+		else if (input[i] == '\"' && !(*quote))
+		{
+			*quote = input[i];
+			*quote_type = 1;
+		}
+		else if (input[i] == *quote)
+			*quote = 0;
+		else if (!(*quote) && input[i] == ' ')
+			break ;
+		i++;
+	}
+	return (i);
 }

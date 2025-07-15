@@ -6,7 +6,7 @@
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/07/15 14:58:59 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/15 15:00:49 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/15 21:20:51 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -59,12 +59,17 @@ static void	handle_command_execution(t_tree *root, t_fd *fd, char ***env,
 static void	handle_pipe_execution(t_tree *root, t_fd *fd, char ***env,
 		char ***exported)
 {
-	t_pid	*pid;
+	t_pid		*pid;
+	t_pipe_data	data;
 
 	pid = init_pid_struct();
 	if (!pid)
 		return ;
-	handle_pipe(pid, fd, env, exported, root);
+	data.pid = pid;
+	data.fd = fd;
+	data.env = env;
+	data.exported = exported;
+	handle_pipe(&data, root);
 }
 
 void	execution(t_tree *root, t_fd *fd, char ***env, char ***exported)

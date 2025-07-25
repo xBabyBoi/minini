@@ -6,7 +6,7 @@
 /*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/11 13:27:23 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/10 22:24:53 by rhafidi          ###   ########.fr       */
+/*   Updated: 2025/07/21 22:01:13 by rhafidi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -39,7 +39,9 @@ int process_cmd(char *input, char ***env, char ***exported)
     if (ast)
     {
         free_array(tokens);
+        // printf("freeing\n");
         exit_status = initialize(ast, fds, env, exported);
+        // printf("zaba wlfada wchad \n");
         free_tree(&ast);
     }
     else if (tokens)
@@ -58,8 +60,11 @@ void    shell_loop(char ***env, char ***exported)
     while (!exit)
     {
         input = readline("minishell> ");
-        if (input == NULL)
+        if (input == NULL) {
+            free_array(env[0]);
+            free_array(exported[0]);
             ctrl_d_handle(0);
+        }
         if (input[0] != '\0')
         {
             add_history(input);
@@ -103,7 +108,9 @@ void    update_shlvl(char ***env)
     int i;
     int j;
     char    *new_shlvl;
+    char    *val;
     int new_val;
+    char    *tmp;
 
     i = 0;
     j = 0;
@@ -115,9 +122,13 @@ void    update_shlvl(char ***env)
         {
             new_val = ft_atoi(&env[0][i][ft_strlen("SHLVL") + 1]);
             new_val++;
-            new_shlvl = ft_strjoin("SHLVL=", ft_itoa(new_val));
+            val = ft_itoa(new_val);
+            new_shlvl = ft_strjoin("SHLVL=", val);
+            free(val);
             free(env[0][i]);
             env[0][i] = new_shlvl;
+            // if (new_shlvl)
+            //     free(new_shlvl);
             return ;
         }
         i++;
@@ -140,4 +151,5 @@ int main(int ac, char **av, char **env)
     shell_loop(&my_env, &exported);
     free_array(my_env);
     free_array(exported);
+    printf("freeeing\n");
 }

@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   builtins.c                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
+/*   By: rhafidi <rhafidi@student.42.fr>            +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2025/04/16 17:21:18 by rhafidi           #+#    #+#             */
-/*   Updated: 2025/07/15 21:31:37 by yel-qori         ###   ########.fr       */
+/*   Updated: 2025/07/24 16:43:02 by rhafidi          ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -41,6 +41,8 @@ int is_builtin(char *cmd)
         return(0);
     return (1);
 }
+//echo 
+// still need to handle echo $variable or echo $?
 
 int compare_var_env(char *arg, char **env)
 {
@@ -84,6 +86,22 @@ int find_start(char *s)
     return(0); 
 }
 
+void    print_args(char **argv, int i)
+{
+    while (argv[i])
+    {
+        ft_putstr_fd(argv[i], STDOUT_FILENO);
+        i++;
+        if(argv[i])
+           write(STDOUT_FILENO, " ", 1); 
+    }
+}
+
+int no_args()
+{
+    write(STDOUT_FILENO, "\n", 1);
+    return (0);
+}
 int ft_echo(char **argv, char ***env, int status)
 {
     int i;
@@ -92,10 +110,7 @@ int ft_echo(char **argv, char ***env, int status)
     i = 1;
     n_flag = 0;
     if (!argv[i])
-    {
-        write(STDOUT_FILENO, "\n", 1);
-        return (0);
-    }
+        return(no_args());
     while (argv[i] && argv[i][0] == '-')
     {
         int j = 1;
@@ -108,13 +123,7 @@ int ft_echo(char **argv, char ***env, int status)
         n_flag = 1;
         i++;
     }
-    while (argv[i])
-    {
-        ft_putstr_fd(argv[i], STDOUT_FILENO);
-        i++;
-        if(argv[i])
-           write(STDOUT_FILENO, " ", 1); 
-    }
+    print_args(argv, i);
     if (n_flag == 0)
         write(STDOUT_FILENO, "\n", 1);
     return (0);
@@ -166,16 +175,24 @@ int ft_cd(char **argv, char ***env)
     struct stat file_stat;
     char    cwd[4096];
     char    new_cwd[4096];
-    
-    if (argv[2])
+    int     arg_count;
+
+    // Count arguments safely
+    arg_count = 0;
+    while (argv[arg_count])
+        arg_count++;
+
+    if (arg_count > 2)
     {
         ft_putstr_fd("minishell: cd: too many arguments\n", 2);
         return (EXIT_FAILURE);
     }
-    if (argv[1])
+
+    if (arg_count == 2)
         path = argv[1]; 
     else
         path = NULL;
+
     if (getcwd(cwd, sizeof(cwd)) == NULL)
     {
         perror("getcwd failed");
@@ -370,6 +387,8 @@ char    *copy_var(char **export, int i)
         len++;
     }
     variable_name = malloc(sizeof(char ) * len + 1);
+    if (!variable_name)
+        return (NULL);
     ft_strlcpy(variable_name, export[i], len + 1);
     return (variable_name);
 }
@@ -382,22 +401,26 @@ void    handle_quotes(char **export, int i, int j)
     char *tmp;
     
     value = ft_strdup(&export[i][j + 1]);
-    tmp = value;
+    // tmp = value;
     quote = "\"";
-    value = ft_strjoin(quote, value);
-    free(tmp);
-    tmp = value;
-    value = ft_strjoin(value, quote);
-    free(tmp);
+    tmp = ft_strjoin(quote, value);
+    free(value);
+    value = tmp;
+    tmp = ft_strjoin(value, quote);
+    free(value);
+    value = tmp;
     variable_name = copy_var(export, i);
     free(export[i]);
     export[i] = ft_strjoin(variable_name, value);
+    free(variable_name);
+    free(value);
 }
 
 void    print_format(char **export)
 {
     int i;
     int j;
+    char    *tmp;
     char    *declare;
 
     i = 0;
@@ -405,7 +428,9 @@ void    print_format(char **export)
     declare = "declare -x ";
     while (export[i])
     {
-        export[i] = ft_strjoin(declare, export[i]);
+        tmp = ft_strjoin(declare, export[i]);
+        free(export[i]);
+        export[i] = tmp; 
         j = 0;
         while (export[i][j])
         {
@@ -480,12 +505,14 @@ int indetical_variable(char ***env, char *var)
     return (1);
 }
 
-// Helper: check if var is in exported
+// Helper: check if var is in exported//////////////////////////////////////////////////////////////////
 int is_in_exported(char *var, char **exported) {
     int i = 0;
     int len = 0;
-    while (var[len] && var[len] != '=')
+    while (var[len] && var[len] != '=' && var[len] != '+')
         len++;
+    if (var[len] == '+' && var[len + 1] == '=')
+        return (-2);
     while (exported && exported[i]) {
         if (!ft_strncmp(exported[i], var, len) &&
             (exported[i][len] == '\0' || exported[i][len] == '=')) {
@@ -505,7 +532,46 @@ void add_or_update_exported(char *var, char ***exported) {
     if (idx >= 0) {
         free((*exported)[idx]);
         (*exported)[idx] = ft_strdup(var);
-    } else {
+    }
+    else if (idx == -2)
+    {
+        // Find the variable name length (before +=)
+        int var_name_len = 0;
+        while (var[var_name_len] && var[var_name_len] != '+')
+            var_name_len++;
+        
+        // Look for existing variable
+        for (i = 0; i < len; i++)
+        {
+            if (!ft_strncmp((*exported)[i], var, var_name_len) && 
+                ((*exported)[i][var_name_len] == '=' || (*exported)[i][var_name_len] == '\0'))
+            {
+                // Variable exists, append value
+                char *old_var = (*exported)[i];
+                char *append_value = var + var_name_len + 2; // Skip "+="
+                (*exported)[i] = ft_strjoin(old_var, append_value);
+                free(old_var);
+                return;
+            }
+        }
+        // Variable doesn't exist, create it with just the append value
+        char *var_name = ft_substr(var, 0, var_name_len);
+        char *temp = ft_strjoin(var_name, "=");
+        char *new_var = ft_strjoin(temp, var + var_name_len + 2);
+        free(var_name);
+        free(temp);
+        
+        char **new_exported = malloc(sizeof(char*) * (len + 2));
+        for (i = 0; i < len; i++)
+            new_exported[i] = (*exported)[i];
+        new_exported[len] = new_var;
+        new_exported[len+1] = NULL;
+        if (*exported)
+            free(*exported);
+        *exported = new_exported;
+    }
+    else
+    {
         char **new_exported = malloc(sizeof(char*) * (len + 2));
         for (i = 0; i < len; i++)
             new_exported[i] = (*exported)[i];
@@ -524,6 +590,51 @@ void add_or_update_env(char *var, char ***env) {
     int i = 0, len = 0;
     while (*env && (*env)[len])
         len++;
+    
+    // Check for += operation - find += manually
+    int var_name_len = 0;
+    int is_append = 0;
+    while (var[var_name_len]) {
+        if (var[var_name_len] == '+' && var[var_name_len + 1] == '=') {
+            is_append = 1;
+            break;
+        }
+        if (var[var_name_len] == '=')
+            break;
+        var_name_len++;
+    }
+    
+    if (is_append) {
+        char *append_value = var + var_name_len + 2; // Skip "+="
+        
+        // Look for existing variable
+        for (i = 0; i < len; i++) {
+            if (!ft_strncmp((*env)[i], var, var_name_len) && (*env)[i][var_name_len] == '=') {
+                char *old_var = (*env)[i];
+                (*env)[i] = ft_strjoin(old_var, append_value);
+                free(old_var);
+                return;
+            }
+        }
+        // Variable doesn't exist, create it with just the append value
+        char *var_name = ft_substr(var, 0, var_name_len);
+        char *temp = ft_strjoin(var_name, "=");
+        char *new_var = ft_strjoin(temp, append_value);
+        free(var_name);
+        free(temp);
+        
+        char **new_env = malloc(sizeof(char*) * (len + 2));
+        for (i = 0; i < len; i++)
+            new_env[i] = (*env)[i];
+        new_env[len] = new_var;
+        new_env[len+1] = NULL;
+        if (*env)
+            free(*env);
+        *env = new_env;
+        return;
+    }
+    
+    // Regular assignment
     int eqpos = 0;
     while (var[eqpos] && var[eqpos] != '=')
         eqpos++;
@@ -568,10 +679,8 @@ void add_var(char **argv, char ***env, char ***exported) {
         }
         i++;
     }
-    // return (EXIT_SUCCESS);
 }
 
-// Update ft_export to print exported list or add variables
 int ft_export(char **argv, char ***env, char ***exported) {
     int i = 0;
     if (!argv[1]) {
@@ -583,6 +692,12 @@ int ft_export(char **argv, char ***env, char ***exported) {
             ft_putstr_fd("\n", STDOUT_FILENO);
             i++;
         }
+        i = 0;
+        while(copy[i])
+        {
+            free(copy[i]);
+            i++;
+        }
         free(copy);
         return (EXIT_SUCCESS);
     } else {
@@ -592,7 +707,7 @@ int ft_export(char **argv, char ***env, char ***exported) {
     return (EXIT_FAILURE);
 }
 
-// env
+// env ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 int ft_env(char **argv, char **env)
 {
@@ -611,11 +726,9 @@ int ft_env(char **argv, char **env)
     return (EXIT_SUCCESS);
 }
 
-// Update ft_unset to remove from both env and exported
 int ft_unset(char **argv, char ***env, char ***exported) {
     int i = 1, j, len;
     while (argv[i]) {
-        // Remove from env
         len = 0;
         while ((*env)[len])
             len++;
@@ -629,7 +742,6 @@ int ft_unset(char **argv, char ***env, char ***exported) {
                 break;
             }
         }
-        // Remove from exported
         len = 0;
         while ((*exported)[len])
             len++;
@@ -648,39 +760,72 @@ int ft_unset(char **argv, char ***env, char ***exported) {
     return (EXIT_SUCCESS);
 }
 
-int    ft_exit(char **argv)
+void    free_mem(t_tree *root, char **env, char **exported, t_fd *fd)
+{
+    free_tree(&root);
+    free(fd);
+    free_array(env);
+    free_array(exported);
+}
+
+void    exit_error(char **argv)
+{
+    ft_putstr_fd("exit\n", STDERR_FILENO);
+    ft_putstr_fd("minishell: exit: ", STDERR_FILENO);
+    ft_putstr_fd(argv[1], STDERR_FILENO);
+    ft_putstr_fd(": numeric argument required\n", STDERR_FILENO);
+}
+
+int    many_args()
+{
+    ft_putstr_fd("exit\n", STDERR_FILENO);
+    ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
+    return (EXIT_FAILURE);
+}
+
+int ret_ex_code(char **argv)
+{
+    int exit_code;
+
+    if (argv[1])
+        exit_code = ft_atoi(argv[1]);
+    else
+        exit_code = 0;
+    return(exit_code);
+}
+
+int    ft_exit(t_tree *root, char **env, char **exported, t_fd *fd)
 {
     int i;
     int exit_code;
-
+    char **argv;
+    
+    argv = root->command;
     i = 0;
-    //check if numeric
+    clear_history();
+    if (!argv[1])
+    {
+        free_mem(root, env, exported, fd);
+        exit (exit_status);
+    }
     while (argv[1][i])
     {
         if ((argv[1][i] < '0' || argv[1][i] > '9') && argv[1][i] != '+' && argv[1][i] != '-')
             {
-                ft_putstr_fd("exit\n", STDERR_FILENO);
-                ft_putstr_fd("minishell: exit: ", STDERR_FILENO);
-                ft_putstr_fd(argv[1], STDERR_FILENO);
-                ft_putstr_fd(": numeric argument required\n", STDERR_FILENO);
+                exit_error(argv);
+                free_mem(root, env, exported, fd);
                 exit(2);
             }
         i++;
     }
     if (argv[1] && argv[2])
-    {
-        ft_putstr_fd("exit\n", STDERR_FILENO);
-        ft_putstr_fd("minishell: exit: too many arguments\n", STDERR_FILENO);
-        return (EXIT_FAILURE);
-    }
-    if (argv[1])
-        exit_code = ft_atoi(argv[1]);
-    else
-        exit_code = 0;
+        return (many_args());
+    exit_code = ret_ex_code(argv);
+    free_mem(root, env, exported, fd);
     exit (exit_code & 0xFF);
 }
 
-int handle_builtins(t_tree *root, int in, int out, char ***env, char ***exported, int status)
+int handle_builtins(t_tree *root, t_fd *fd, char ***env, char ***exported, int status)
 {
     int exit_code;
 
@@ -698,6 +843,7 @@ int handle_builtins(t_tree *root, int in, int out, char ***env, char ***exported
     else if (!ft_strcmp(root->command[0], "env"))
         exit_code = ft_env(root->command, env[0]);
     else if (!ft_strcmp(root->command[0], "exit"))
-        exit_code = ft_exit(root->command);
+        exit_code = ft_exit(root, *env, *exported, fd);
     return (exit_code);
+    
 }

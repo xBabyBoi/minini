@@ -5,101 +5,77 @@
 /*                                                    +:+ +:+         +:+     */
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/07/13 15:29:18 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/14 15:36:55 by yel-qori         ###   ########.fr       */
+/*   Created: 2025/07/25 15:28:52 by yel-qori          #+#    #+#             */
+/*   Updated: 2025/07/25 15:28:58 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-char	**process_tokens(char *input, char **tokens, char **env,
-		int exit_status)
+void	free_tokens_array(char **tokens, int token_count)
 {
-	t_token_ctx	ctx;
+	int	j;
 
-	ctx.tokens = tokens;
-	ctx.env = env;
-	ctx.exit_status = exit_status;
-	return (tokenize_loop(input, &ctx));
-}
-
-char	**process_tokenization(char *input, char **env, int exit_status)
-{
-	char	**tokens;
-	char	*spaced_input;
-
-	spaced_input = add_delimiter_spaces(input);
-	if (!spaced_input)
-		return (NULL);
-	tokens = initial_tokenization_with_env(spaced_input, env, exit_status);
-	if (check_syntax_errors(tokens))
-	{
-		exit_status = 2;
-		return (NULL);
-	}
-	free(spaced_input);
-	if (!tokens)
-		return (NULL);
-	if (!invalid_pipe(tokens))
-	{
-		free_token_array(tokens);
-		return (NULL);
-	}
-	return (tokens);
-}
-
-char	**tokenize_input(char *input, char **env, int exit_status)
-{
-	if (!input || !*input)
-		return (NULL);
-	if (!check_valid_quotes(input))
-	{
-		printf("minishell: unclosed quotes\n");
-		return (NULL);
-	}
-	if (special_characters(input))
-		return (NULL);
-	return (process_tokenization(input, env, exit_status));
-}
-
-void	process_quote_removal(char *str, char *result)
-{
-	char	current_quote;
-	int		i;
-	int		j;
-
-	i = 0;
 	j = 0;
-	current_quote = 0;
-	while (str[i])
+	while (j < token_count)
 	{
-		if (!current_quote && (str[i] == '\'' || str[i] == '"'))
-		{
-			current_quote = str[i];
-			i++;
-		}
-		else if (current_quote && str[i] == current_quote)
-		{
-			current_quote = 0;
-			i++;
-		}
-		else
-			result[j++] = str[i++];
+		free(tokens[j]);
+		j++;
 	}
-	result[j] = '\0';
+	free(tokens);
 }
 
-char	*remove_quotes_from_string(char *str)
+void	skip_whitespace(char *input, int *i)
 {
-	char	*result;
+	while (input[*i] && input[*i] == ' ')
+		(*i)++;
+}
+
+void	handle_quotes_parsing(char input_char, char *quote, int *quote_type)
+{
+	if (input_char == '\'' && !*quote)
+	{
+		*quote = input_char;
+		*quote_type = 0;
+	}
+	else if (input_char == '"' && !*quote)
+	{
+		*quote = input_char;
+		*quote_type = 1;
+	}
+	else if (input_char == *quote)
+		*quote = 0;
+}
+
+int	find_token_end(char *input, int start)
+{
+	int		i;
+	char	quote;
+	int		quote_type;
+
+	i = start;
+	quote = 0;
+	quote_type = -1;
+	while (input[i])
+	{
+		handle_quotes_parsing(input[i], &quote, &quote_type);
+		if (!quote && input[i] == ' ')
+			break ;
+		i++;
+	}
+	return (i);
+}
+
+char	*create_token(char *input, int start, int end)
+{
+	char	*token;
 	int		len;
 
-	if (!str)
+	len = end - start;
+	token = malloc(len + 1);
+	if (!token)
 		return (NULL);
-	len = ft_strlen(str);
-	result = malloc(len + 1);
-	if (!result)
-		return (NULL);
-	process_quote_removal(str, result);
-	return (result);
+	strncpy(token, input + start, len);
+	token[len] = '\0';
+	return (token);
 }

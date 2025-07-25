@@ -1,39 +1,63 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   parse_token4.c                                     :+:      :+:    :+:   */
+/*   parse_tokens4.c                                    :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/07/15 15:15:39 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/15 15:16:16 by yel-qori         ###   ########.fr       */
+/*   Created: 2025/07/25 15:41:35 by yel-qori          #+#    #+#             */
+/*   Updated: 2025/07/25 15:41:39 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "minishell.h"
 
-static t_tree	*create_pipe_structure(char **tokens, int start, int pipe_pos)
+int	handle_redirection_skip(int i, int end, char **cmd_args, int arg_count)
 {
-	t_tree	*pipe_node;
-
-	pipe_node = create_pipe_node();
-	pipe_node->left = parse_token_subset(tokens, start, pipe_pos - 1);
-	pipe_node->right = parse_tokens(tokens + pipe_pos + 1);
-	return (pipe_node);
+	i += 2;
+	if (i > end + 1)
+	{
+		cleanup_cmd_args(cmd_args, arg_count);
+		return (-1);
+	}
+	return (i);
 }
 
-t_tree	*parse_tokens(char **tokens)
+int	add_argument_to_array(char **cmd_args, char **tokens, int i, int arg_count)
 {
-	int		i;
-	int		start;
-
-	start = 0;
-	i = 0;
-	while (tokens[i])
+	cmd_args[arg_count] = ft_strdup(tokens[i]);
+	if (!cmd_args[arg_count])
 	{
-		if (ft_strcmp(tokens[i], "|") == 0)
-			return (create_pipe_structure(tokens, start, i));
+		cleanup_cmd_args(cmd_args, arg_count);
+		return (-1);
+	}
+	return (0);
+}
+
+char	**process_tokens_loop(char **cmd_args, char **tokens, int start,
+		int end)
+{
+	int	i;
+	int	arg_count;
+	int	result;
+
+	arg_count = 0;
+	i = start;
+	while (i <= end)
+	{
+		if (is_redirections(tokens[i]))
+		{
+			result = handle_redirection_skip(i, end, cmd_args, arg_count);
+			if (result == -1)
+				return (NULL);
+			i = result;
+			continue ;
+		}
+		if (add_argument_to_array(cmd_args, tokens, i, arg_count) == -1)
+			return (NULL);
+		arg_count++;
 		i++;
 	}
-	return (parse_token_subset(tokens, 0, -1));
+	cmd_args[arg_count] = NULL;
+	return (cmd_args);
 }

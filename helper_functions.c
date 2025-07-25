@@ -1,12 +1,12 @@
 /* ************************************************************************** */
 /*                                                                            */
 /*                                                        :::      ::::::::   */
-/*   utils_helper.c                                     :+:      :+:    :+:   */
+/*   helper_functions.c                                 :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
 /*   By: yel-qori <yel-qori@student.42.fr>          +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
-/*   Created: 2025/07/13 14:55:11 by yel-qori          #+#    #+#             */
-/*   Updated: 2025/07/13 15:04:51 by yel-qori         ###   ########.fr       */
+/*   Created: 2025/07/25 16:26:03 by yel-qori          #+#    #+#             */
+/*   Updated: 2025/07/25 16:26:05 by yel-qori         ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,34 +17,33 @@ int	is_operator_char(char c)
 	return (c == '<' || c == '>' || c == '|');
 }
 
-int	is_operator_char2(char c, char *quote)
+void	free_token_array(char **tokens)
 {
-	if (*quote)
-		return (0);
-	return (c == '<' || c == '>' || c == '|');
-}
+	int	i;
 
-int	skip_whitespace(char *input, int i)
-{
-	while (input[i] && input[i] == ' ')
-		i++;
-	return (i);
-}
-
-int	is_quoted_token(char *token, char *quote)
-{
-	if (!token || !quote)
-		return (0);
-	if (token[0] == '\'' || token[0] == '"')
+	if (!tokens)
+		return ;
+	i = 0;
+	while (tokens[i])
 	{
-		*quote = token[0];
-		return (1);
+		free(tokens[i]);
+		i++;
 	}
-	return (0);
+	free(tokens);
 }
 
-// char	**initial_tokenization(char *input)
-// {
-// 	(void)input;
-// 	return (NULL);
-// }
+int	is_complete_quoted_token(char *token)
+{
+	int	i;
+
+	if (!token)
+		return (0);
+	i = 0;
+	while (token[i])
+	{
+		if (token[i] != '\'' && token[i] != '"')
+			return (0);
+		i++;
+	}
+	return (1);
+}
